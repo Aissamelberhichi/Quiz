@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamPro — Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- SheetJS (XLSX parser) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <div class="quiz-layout" id="quizApp">
+
+    <!-- ══════════════════ QUIZ HEADER ══════════════════ -->
+    <header class="quiz-header" role="banner">
+      <div class="quiz-header-inner">
+        <button class="quiz-back-btn" id="backBtn" aria-label="Retour à l'accueil">
+          ← Accueil
+        </button>
+
+        <div class="quiz-title-bar">
+          <h2 id="quizTitle">Chargement…</h2>
+          <p id="quizSubtitle"></p>
+        </div>
+
+        <div class="quiz-timer" id="timerDisplay" aria-live="polite" aria-label="Temps restant">
+          ⏱ --:--
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </header>
+
+    <!-- ══════════════════ LOADING SCREEN ══════════════════ -->
+    <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="loading-text">Chargement de l'examen…</p>
+    </div>
+
+    <!-- ══════════════════ ERROR SCREEN ══════════════════ -->
+    <div class="error-screen" id="errorScreen" style="display:none" role="alert">
+      <div class="error-icon" aria-hidden="true">⚠️</div>
+      <h2 class="error-title" id="errorTitle">Erreur</h2>
+      <p class="error-msg" id="errorMsg"></p>
+      <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+        ← Retour à l'accueil
+      </button>
+    </div>
+
+    <!-- ══════════════════ QUIZ SCREEN ══════════════════ -->
+    <div class="quiz-body" id="quizScreen" style="display:none">
+
+      <!-- Question counter + live score -->
+      <div class="question-counter">
+        <span class="q-index" aria-label="Progression">
+          Question <strong id="qIndex">1</strong> / <span id="qTotal">—</span>
+        </span>
+        <div class="q-score-live">
+          <span style="font-size:0.78rem;color:var(--text-muted)">Score:</span>
+          <span class="score-pill" id="scoreLive" aria-live="polite">0 / 0</span>
+        </div>
+      </div>
+
+      <!-- Question card -->
+      <div class="question-card" role="main">
+        <p class="question-text" id="questionText"></p>
+
+        <p class="question-hint" id="questionHint" aria-live="polite"></p>
+
+        <ul class="options-list" id="optionsList" role="listbox" aria-multiselectable="true" aria-label="Options de réponse"></ul>
+
+        <!-- Explanation (shown after submit) -->
+        <div class="explanation-box" id="explanationBox" style="display:none" role="note" aria-label="Explication">
+          <div class="explanation-label">
+            <span aria-hidden="true">💡</span>
+            Explication
+          </div>
+          <p class="explanation-text" id="explanationText"></p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="quiz-actions">
+        <button class="btn btn-secondary" id="btnSkip" onclick="document.getElementById('btnNext').click()" style="display:none">
+          Passer →
+        </button>
+
+        <div style="display:flex;gap:12px;margin-left:auto">
+          <button class="btn btn-primary" id="btnSubmit" disabled aria-label="Valider ma réponse">
+            ✓ Valider
+          </button>
+          <button class="btn btn-primary" id="btnNext" style="display:none" aria-label="Question suivante">
+            Question suivante →
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /quiz-body -->
+
+    <!-- ══════════════════ RESULTS SCREEN ══════════════════ -->
+    <div class="results-screen" id="resultsScreen" style="display:none" role="main" aria-label="Résultats">
+
+      <div class="results-trophy" id="resultsTrophy" aria-hidden="true">🏆</div>
+      <h2 class="results-headline" id="resultsTitle">Résultats</h2>
+      <p class="results-subtext" id="resultsSub"></p>
+
+      <!-- Score ring -->
+      <div class="score-ring-wrap" aria-label="Score en pourcentage">
+        <svg class="score-ring-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="score-ring-bg"   cx="80" cy="80" r="65"/>
+          <circle class="score-ring-fill" cx="80" cy="80" r="65" id="scoreRingFill"/>
+        </svg>
+        <div class="score-ring-text">
+          <span class="score-percent" id="scorePercent">—%</span>
+          <span class="score-label">Score</span>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="results-stats" role="list">
+        <div class="result-stat-card" role="listitem">
+          <div class="result-stat-value green" id="statCorrect">—</div>
+          <div class="result-stat-label">Correctes</div>
+        </div>
+        <div class="result-stat-card" role="listitem">
+          <div class="result-stat-value red" id="statWrong">—</div>
+          <div class="result-stat-label">Incorrectes</div>
+        </div>
+        <div class="result-stat-card" role="listitem">
+          <div class="result-stat-value blue" id="statTotal">—</div>
+          <div class="result-stat-label">Questions</div>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div class="results-actions">
+        <button class="btn btn-primary" id="btnRetry" aria-label="Recommencer l'examen">
+          ↺ Recommencer
+        </button>
+        <button class="btn btn-secondary" id="btnHome" aria-label="Retour à l'accueil">
+          ← Accueil
+        </button>
+      </div>
+
+    </div><!-- /results-screen -->
+
+  </div><!-- /quiz-layout -->
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

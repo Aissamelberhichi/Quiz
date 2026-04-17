@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamPro — Plateforme de Préparation aux Concours</title>
+  <meta name="description" content="Préparez vos concours professionnels avec nos examens interactifs." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════ HEADER ══════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <a href="index.html" class="logo-mark" aria-label="ExamPro Home">
+        <div class="logo-icon" aria-hidden="true">⚡</div>
+        <span>Exam<em>Pro</em></span>
+      </a>
+
+      <div class="header-search" role="search">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input
+          type="search"
+          id="globalSearch"
+          placeholder="Rechercher un examen…"
+          aria-label="Rechercher un examen"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="header-stats" aria-label="Statistiques">
+        <span id="totalExamsCount" class="stat-badge">—</span>
+        <span style="color:var(--text-muted);font-size:0.8rem">examens disponibles</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════ HERO ══════════════════ -->
+  <section class="hero" aria-labelledby="heroTitle">
+    <div class="hero-eyebrow" aria-hidden="true">
+      🏆 Concours Professionnels Maroc
+    </div>
+    <h1 id="heroTitle">
+      Préparez vos concours<br/>
+      avec <span class="highlight">précision</span>
+    </h1>
+    <p>
+      Accédez à des centaines de questions officielles classées par institution,
+      spécialité et année. Évaluez-vous en conditions réelles.
+    </p>
+  </section>
+
+  <!-- ══════════════════ FILTERS ══════════════════ -->
+  <section class="filters-section" aria-label="Filtres">
+    <div class="filters-bar" role="group" aria-label="Filtrer les examens">
+
+      <span class="filter-label" aria-hidden="true">Institution</span>
+      <div class="filter-group" id="etabFilters" role="group" aria-label="Filtrer par institution"></div>
+
+      <div class="filters-divider" aria-hidden="true"></div>
+
+      <span class="filter-label" aria-hidden="true">Spécialité</span>
+      <div class="filter-group" id="specFilters" role="group" aria-label="Filtrer par spécialité"></div>
+
+      <div class="filters-divider" aria-hidden="true"></div>
+
+      <span class="filter-label" aria-hidden="true">Année</span>
+      <div class="filter-group" id="yearFilters" role="group" aria-label="Filtrer par année"></div>
+
+      <div class="filters-divider" aria-hidden="true"></div>
+
+      <button class="filters-reset" id="resetFilters" aria-label="Réinitialiser les filtres">
+        ✕ Réinitialiser
+      </button>
+    </div>
+  </section>
+
+  <!-- ══════════════════ RESULTS BAR ══════════════════ -->
+  <div class="results-bar" aria-live="polite" aria-atomic="true">
+    <p class="results-count" id="resultsCount">
+      <strong>—</strong> examens
+    </p>
+    <p style="font-size:0.78rem;color:var(--text-muted)" id="pageInfo"></p>
+  </div>
+
+  <!-- ══════════════════ EXAM GRID ══════════════════ -->
+  <main class="exams-section" id="examsSection" aria-label="Liste des examens">
+    <div class="exams-grid" id="examsGrid" role="list"></div>
+  </main>
+
+  <!-- ══════════════════ PAGINATION ══════════════════ -->
+  <nav class="pagination" id="pagination" aria-label="Pagination des examens"></nav>
+
+  <!-- ══════════════════ FOOTER ══════════════════ -->
+  <footer class="site-footer">
+    ExamPro &copy; 2025 — Plateforme de préparation aux concours professionnels
+  </footer>
+
+  <script src="config.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    /* ── STATE ─────────────────────────────────────────── */
+    const state = {
+      filters: { etab: null, spec: null, year: null },
+      search: '',
+      page: 1,
+    };
+
+    /* ── DOM REFS ──────────────────────────────────────── */
+    const $grid       = document.getElementById('examsGrid');
+    const $pagination = document.getElementById('pagination');
+    const $count      = document.getElementById('resultsCount');
+    const $pageInfo   = document.getElementById('pageInfo');
+    const $total      = document.getElementById('totalExamsCount');
+    const $search     = document.getElementById('globalSearch');
+    const $reset      = document.getElementById('resetFilters');
+
+    /* ── INIT ──────────────────────────────────────────── */
+    function init() {
+      $total.textContent = EXAMS_CONFIG.length;
+      buildFilters();
+      render();
+    }
+
+    /* ── FILTER CHIPS ──────────────────────────────────── */
+    function buildFilters() {
+      renderChips('etabFilters', FILTER_OPTIONS.etabs, 'etab');
+      renderChips('specFilters', FILTER_OPTIONS.specs, 'spec');
+      renderChips('yearFilters', FILTER_OPTIONS.years, 'year');
+    }
+
+    function renderChips(containerId, values, filterKey) {
+      const wrap = document.getElementById(containerId);
+      wrap.innerHTML = '';
+      values.forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip';
+        btn.textContent = val;
+        btn.setAttribute('aria-pressed', 'false');
+        btn.dataset.value = val;
+        btn.dataset.key = filterKey;
+        btn.addEventListener('click', () => toggleFilter(filterKey, val, btn));
+        wrap.appendChild(btn);
+      });
+    }
+
+    function toggleFilter(key, val, btnEl) {
+      const current = state.filters[key];
+      state.filters[key] = (current === val) ? null : val;
+      state.page = 1;
+
+      // Update aria + class
+      document.querySelectorAll(`[data-key="${key}"]`).forEach(b => {
+        const active = b.dataset.value == state.filters[key];
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-pressed', active);
+      });
+      render();
+    }
+
+    $reset.addEventListener('click', () => {
+      state.filters = { etab: null, spec: null, year: null };
+      state.search  = '';
+      state.page    = 1;
+      $search.value = '';
+      document.querySelectorAll('.filter-chip').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      render();
+    });
+
+    /* ── SEARCH ────────────────────────────────────────── */
+    let searchTimer;
+    $search.addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        state.search = e.target.value.trim().toLowerCase();
+        state.page = 1;
+        render();
+      }, 220);
+    });
+
+    /* ── FILTER LOGIC ──────────────────────────────────── */
+    function getFiltered() {
+      return EXAMS_CONFIG.filter(exam => {
+        if (state.filters.etab && exam.etab !== state.filters.etab) return false;
+        if (state.filters.spec && exam.spec !== state.filters.spec) return false;
+        if (state.filters.year && exam.year !== state.filters.year) return false;
+        if (state.search) {
+          const haystack = `${exam.title} ${exam.etab} ${exam.spec} ${exam.year} ${exam.echelle}`.toLowerCase();
+          if (!haystack.includes(state.search)) return false;
+        }
+        return true;
+      });
+    }
+
+    /* ── RENDER ────────────────────────────────────────── */
+    function render() {
+      const filtered = getFiltered();
+      const total    = filtered.length;
+      const pages    = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+      if (state.page > pages) state.page = pages;
+
+      const start  = (state.page - 1) * ITEMS_PER_PAGE;
+      const slice  = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+      // Results bar
+      $count.innerHTML = `<strong>${total}</strong> examen${total !== 1 ? 's' : ''}`;
+      $pageInfo.textContent = total > ITEMS_PER_PAGE
+        ? `Page ${state.page} sur ${pages}`
+        : '';
+
+      // Grid
+      $grid.innerHTML = '';
+      if (slice.length === 0) {
+        $grid.innerHTML = `
+          <div class="empty-state" role="status">
+            <div class="empty-state-icon">🔍</div>
+            <h3>Aucun examen trouvé</h3>
+            <p>Modifiez vos filtres ou votre recherche pour trouver des examens.</p>
+          </div>`;
+      } else {
+        slice.forEach((exam, i) => {
+          const card = createCard(exam, i);
+          $grid.appendChild(card);
+        });
+      }
+
+      renderPagination(pages);
+    }
+
+    /* ── CARD ──────────────────────────────────────────── */
+    function createCard(exam, animIndex) {
+      const article = document.createElement('article');
+      article.className = 'exam-card';
+      article.setAttribute('role', 'listitem');
+      article.setAttribute('aria-label', exam.title);
+      article.style.animationDelay = `${animIndex * 60}ms`;
+      article.tabIndex = 0;
+
+      const institutionEmojis = { Justice: '⚖️', Education: '📚' };
+      const emoji = institutionEmojis[exam.etab] || '🏛️';
+
+      article.innerHTML = `
+        <div class="card-header">
+          <div class="card-logo-fallback" aria-hidden="true" title="${exam.etab}">
+            ${emoji}
+          </div>
+          <div class="card-meta">
+            <span class="badge badge-year">${exam.year}</span>
+            <span class="badge badge-echelle">${exam.echelle}</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">${exam.title}</h3>
+          <p class="card-subtitle">
+            <span>${exam.etab}</span>
+            <span class="dot" aria-hidden="true"></span>
+            <span>${exam.spec}</span>
+          </p>
+        </div>
+
+        <div class="card-footer">
+          <div class="card-info">
+            <div class="card-info-item">
+              <span class="card-info-label">Questions</span>
+              <span class="card-info-value">${exam.questionCount || '—'}</span>
+            </div>
+            <div class="card-info-item">
+              <span class="card-info-label">Durée</span>
+              <span class="card-info-value">${exam.duration ? exam.duration + ' min' : '—'}</span>
+            </div>
+          </div>
+          <div class="card-cta" aria-hidden="true">→</div>
+        </div>
+      `;
+
+      // Try to load real logo, fallback to emoji already rendered
+      const img = new Image();
+      img.onload = () => {
+        const fallback = article.querySelector('.card-logo-fallback');
+        if (fallback) {
+          const realImg = document.createElement('img');
+          realImg.src = exam.logo;
+          realImg.alt = exam.etab;
+          realImg.className = 'card-logo';
+          fallback.replaceWith(realImg);
+        }
+      };
+      img.src = exam.logo;
+
+      // Click & keyboard nav
+      const launch = () => {
+        localStorage.setItem('selectedExam', JSON.stringify(exam));
+        window.location.href = 'quiz.html';
+      };
+      article.addEventListener('click', launch);
+      article.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); }
+      });
+
+      return article;
+    }
+
+    /* ── PAGINATION ────────────────────────────────────── */
+    function renderPagination(totalPages) {
+      $pagination.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      const add = (label, page, disabled = false, active = false, isEllipsis = false) => {
+        if (isEllipsis) {
+          const span = document.createElement('span');
+          span.className = 'page-ellipsis';
+          span.textContent = '…';
+          $pagination.appendChild(span);
+          return;
+        }
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (active ? ' active' : '');
+        btn.textContent = label;
+        btn.disabled = disabled;
+        btn.setAttribute('aria-label', `Page ${page}`);
+        if (active) btn.setAttribute('aria-current', 'page');
+        btn.addEventListener('click', () => {
+          state.page = page;
+          render();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        $pagination.appendChild(btn);
+      };
+
+      add('←', state.page - 1, state.page === 1);
+
+      const range = getPageRange(state.page, totalPages);
+      let prev = null;
+      range.forEach(p => {
+        if (prev !== null && p - prev > 1) add(null, null, false, false, true);
+        add(p, p, false, p === state.page);
+        prev = p;
+      });
+
+      add('→', state.page + 1, state.page === totalPages);
+    }
+
+    function getPageRange(current, total) {
+      const delta = 2;
+      const pages = new Set([1, total]);
+      for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+        pages.add(i);
+      }
+      return [...pages].sort((a, b) => a - b);
+    }
+
+    /* ── BOOT ──────────────────────────────────────────── */
+    init();
+  })();
+  </script>
+</body>
+</html>
