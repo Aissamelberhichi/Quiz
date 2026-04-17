@@ -5,152 +5,288 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ExamPro — Quiz</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- SheetJS (XLSX parser) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
-  <div class="quiz-layout" id="quizApp">
+<div class="quiz-shell" id="quizApp">
 
-    <!-- ══════════════════ QUIZ HEADER ══════════════════ -->
-    <header class="quiz-header" role="banner">
-      <div class="quiz-header-inner">
-        <button class="quiz-back-btn" id="backBtn" aria-label="Retour à l'accueil">
-          ← Accueil
-        </button>
-
-        <div class="quiz-title-bar">
-          <h2 id="quizTitle">Chargement…</h2>
-          <p id="quizSubtitle"></p>
+  <!-- ══════════════════════════════════════════
+       QUIZ TOP BAR
+  ══════════════════════════════════════════ -->
+  <header class="quiz-topbar" role="banner">
+    <div class="quiz-topbar-left">
+      <button class="quiz-back" id="backBtn" aria-label="Retour à l'accueil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Retour
+      </button>
+      <div style="width:1px;height:20px;background:var(--line)"></div>
+      <div class="quiz-topbar-center">
+        <div class="quiz-title-row">
+          <div class="quiz-title-text" id="quizTitle">Chargement…</div>
         </div>
-
-        <div class="quiz-timer" id="timerDisplay" aria-live="polite" aria-label="Temps restant">
-          ⏱ --:--
+        <div class="quiz-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+          <div class="quiz-progress-fill" id="progressFill" style="width:0%"></div>
         </div>
       </div>
-
-      <!-- Progress bar -->
-      <div class="progress-bar-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-      </div>
-    </header>
-
-    <!-- ══════════════════ LOADING SCREEN ══════════════════ -->
-    <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
-      <div class="spinner" aria-hidden="true"></div>
-      <p class="loading-text">Chargement de l'examen…</p>
     </div>
 
-    <!-- ══════════════════ ERROR SCREEN ══════════════════ -->
+    <div class="quiz-topbar-right">
+      <div class="quiz-timer" id="timerDisplay" aria-live="polite" aria-label="Temps restant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span id="timerText">--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       LEFT PANEL — Question Navigator
+  ══════════════════════════════════════════ -->
+  <aside class="quiz-left-panel" aria-label="Navigation des questions">
+    <div class="panel-title">Questions</div>
+
+    <div class="question-nav-grid" id="questionNavGrid" aria-label="Grille de navigation"></div>
+
+    <div class="panel-legend">
+      <div class="legend-item">
+        <div class="legend-dot current"></div>
+        En cours
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot correct"></div>
+        Correcte
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot wrong"></div>
+        Incorrecte
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot pending"></div>
+        Non répondue
+      </div>
+    </div>
+
+    <!-- Live score panel -->
+    <div class="side-card" id="liveScoreCard" style="display:none">
+      <div class="side-card-header">Score en direct</div>
+      <div class="side-card-body">
+        <div class="score-display">
+          <div class="score-big">
+            <span id="sidePanelScore">0</span><span class="score-denom">/<span id="sidePanelTotal">0</span></span>
+          </div>
+          <div class="score-sub">Réponses correctes</div>
+        </div>
+        <div class="score-breakdown">
+          <div class="score-row">
+            <span class="score-row-label"><div class="dot-indicator green"></div> Correctes</span>
+            <span class="score-row-val green" id="sideCorrect">0</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label"><div class="dot-indicator red"></div> Incorrectes</span>
+            <span class="score-row-val red" id="sideWrong">0</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label"><div class="dot-indicator gray"></div> Restantes</span>
+            <span class="score-row-val" id="sideRemaining" style="color:var(--ink-3)">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════
+       QUIZ MAIN AREA
+  ══════════════════════════════════════════ -->
+  <div id="quizMainArea">
+
+    <!-- LOADING -->
+    <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="loading-label">Chargement de l'examen…</p>
+    </div>
+
+    <!-- ERROR -->
     <div class="error-screen" id="errorScreen" style="display:none" role="alert">
-      <div class="error-icon" aria-hidden="true">⚠️</div>
-      <h2 class="error-title" id="errorTitle">Erreur</h2>
+      <div class="error-icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h2 class="error-title" id="errorTitle">Erreur de chargement</h2>
       <p class="error-msg" id="errorMsg"></p>
       <button class="btn btn-secondary" onclick="window.location.href='index.html'">
         ← Retour à l'accueil
       </button>
     </div>
 
-    <!-- ══════════════════ QUIZ SCREEN ══════════════════ -->
-    <div class="quiz-body" id="quizScreen" style="display:none">
+    <!-- QUIZ SCREEN -->
+    <div class="quiz-main" id="quizScreen" style="display:none" role="main">
 
-      <!-- Question counter + live score -->
-      <div class="question-counter">
-        <span class="q-index" aria-label="Progression">
-          Question <strong id="qIndex">1</strong> / <span id="qTotal">—</span>
+      <!-- Question header -->
+      <div class="quiz-question-header">
+        <span class="q-counter-label">
+          Question <strong id="qIndex">1</strong> sur <span id="qTotal">—</span>
         </span>
-        <div class="q-score-live">
-          <span style="font-size:0.78rem;color:var(--text-muted)">Score:</span>
-          <span class="score-pill" id="scoreLive" aria-live="polite">0 / 0</span>
+        <div class="q-type-badge single" id="qTypeBadge" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <span id="qTypeLabel">Réponse unique</span>
         </div>
       </div>
 
       <!-- Question card -->
-      <div class="question-card" role="main">
-        <p class="question-text" id="questionText"></p>
+      <div class="question-card">
+        <div class="question-body">
+          <span class="question-number-tag" id="questionTag">Q01</span>
+          <p class="question-text" id="questionText"></p>
+        </div>
+        <div class="options-divider"></div>
+        <div class="options-area">
+          <ul id="optionsList" role="listbox" aria-multiselectable="true" aria-label="Choix de réponse" style="list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;margin:0"></ul>
+        </div>
+      </div>
 
-        <p class="question-hint" id="questionHint" aria-live="polite"></p>
-
-        <ul class="options-list" id="optionsList" role="listbox" aria-multiselectable="true" aria-label="Options de réponse"></ul>
-
-        <!-- Explanation (shown after submit) -->
-        <div class="explanation-box" id="explanationBox" style="display:none" role="note" aria-label="Explication">
-          <div class="explanation-label">
-            <span aria-hidden="true">💡</span>
-            Explication
+      <!-- Explanation -->
+      <div class="explanation-card" id="explanationBox" style="display:none" role="note">
+        <div class="explanation-header">
+          <div class="explanation-header-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
           </div>
-          <p class="explanation-text" id="explanationText"></p>
+          <span class="explanation-label">Explication</span>
+        </div>
+        <div class="explanation-body" id="explanationText"></div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="quiz-action-bar">
+        <button class="btn btn-secondary" id="btnSubmit" disabled aria-label="Valider ma réponse">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Valider la réponse
+        </button>
+        <button class="btn btn-primary" id="btnNext" style="display:none" aria-label="Question suivante">
+          Suivant
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+
+    </div><!-- /quiz-main -->
+
+    <!-- RESULTS SCREEN -->
+    <div class="results-screen" id="resultsScreen" style="display:none" aria-label="Résultats">
+
+      <div class="results-header">
+        <div class="results-grade excellent" id="resultsGrade" role="status">🏆 Résultats</div>
+        <h2 class="results-main-title" id="resultsTitle">Examen terminé</h2>
+        <p class="results-subtitle" id="resultsSub"></p>
+      </div>
+
+      <!-- Score ring -->
+      <div class="score-ring-wrap" aria-label="Pourcentage de réussite">
+        <svg class="score-ring-svg" viewBox="0 0 148 148" style="transform:rotate(-90deg);width:148px;height:148px" aria-hidden="true">
+          <circle class="score-ring-track" cx="74" cy="74" r="60"/>
+          <circle class="score-ring-fill" cx="74" cy="74" r="60" id="scoreRingFill"
+                  style="stroke-dasharray:376;stroke-dashoffset:376"/>
+        </svg>
+        <div class="score-ring-center">
+          <span class="score-pct" id="scorePercent">—%</span>
+          <span class="score-pct-label">Score</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="results-stats-grid">
+        <div class="res-stat">
+          <div class="res-stat-val green" id="statCorrect">—</div>
+          <div class="res-stat-lbl">Correctes</div>
+        </div>
+        <div class="res-stat">
+          <div class="res-stat-val red" id="statWrong">—</div>
+          <div class="res-stat-lbl">Incorrectes</div>
+        </div>
+        <div class="res-stat">
+          <div class="res-stat-val blue" id="statTotal">—</div>
+          <div class="res-stat-lbl">Total</div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="quiz-actions">
-        <button class="btn btn-secondary" id="btnSkip" onclick="document.getElementById('btnNext').click()" style="display:none">
-          Passer →
-        </button>
-
-        <div style="display:flex;gap:12px;margin-left:auto">
-          <button class="btn btn-primary" id="btnSubmit" disabled aria-label="Valider ma réponse">
-            ✓ Valider
-          </button>
-          <button class="btn btn-primary" id="btnNext" style="display:none" aria-label="Question suivante">
-            Question suivante →
-          </button>
-        </div>
-      </div>
-
-    </div><!-- /quiz-body -->
-
-    <!-- ══════════════════ RESULTS SCREEN ══════════════════ -->
-    <div class="results-screen" id="resultsScreen" style="display:none" role="main" aria-label="Résultats">
-
-      <div class="results-trophy" id="resultsTrophy" aria-hidden="true">🏆</div>
-      <h2 class="results-headline" id="resultsTitle">Résultats</h2>
-      <p class="results-subtext" id="resultsSub"></p>
-
-      <!-- Score ring -->
-      <div class="score-ring-wrap" aria-label="Score en pourcentage">
-        <svg class="score-ring-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle class="score-ring-bg"   cx="80" cy="80" r="65"/>
-          <circle class="score-ring-fill" cx="80" cy="80" r="65" id="scoreRingFill"/>
-        </svg>
-        <div class="score-ring-text">
-          <span class="score-percent" id="scorePercent">—%</span>
-          <span class="score-label">Score</span>
-        </div>
-      </div>
-
-      <!-- Stats grid -->
-      <div class="results-stats" role="list">
-        <div class="result-stat-card" role="listitem">
-          <div class="result-stat-value green" id="statCorrect">—</div>
-          <div class="result-stat-label">Correctes</div>
-        </div>
-        <div class="result-stat-card" role="listitem">
-          <div class="result-stat-value red" id="statWrong">—</div>
-          <div class="result-stat-label">Incorrectes</div>
-        </div>
-        <div class="result-stat-card" role="listitem">
-          <div class="result-stat-value blue" id="statTotal">—</div>
-          <div class="result-stat-label">Questions</div>
-        </div>
-      </div>
-
-      <!-- CTA buttons -->
       <div class="results-actions">
-        <button class="btn btn-primary" id="btnRetry" aria-label="Recommencer l'examen">
-          ↺ Recommencer
+        <button class="btn btn-brand btn-lg" id="btnRetry">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Recommencer
         </button>
-        <button class="btn btn-secondary" id="btnHome" aria-label="Retour à l'accueil">
-          ← Accueil
+        <button class="btn btn-secondary btn-lg" id="btnHome">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Accueil
         </button>
       </div>
 
-    </div><!-- /results-screen -->
+    </div><!-- /results -->
 
-  </div><!-- /quiz-layout -->
+  </div><!-- /quizMainArea -->
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <!-- RIGHT PANEL — Exam info -->
+  <aside class="quiz-right-panel" aria-label="Informations sur l'examen">
+
+    <div class="side-card">
+      <div class="side-card-header">Informations</div>
+      <div class="side-card-body">
+        <div class="exam-info-list" id="examInfoList">
+          <div class="exam-info-row">
+            <span class="exam-info-key">Examen</span>
+            <span class="exam-info-val" id="infoTitle">—</span>
+          </div>
+          <div class="exam-info-row">
+            <span class="exam-info-key">Institution</span>
+            <span class="exam-info-val" id="infoEtab">—</span>
+          </div>
+          <div class="exam-info-row">
+            <span class="exam-info-key">Spécialité</span>
+            <span class="exam-info-val" id="infoSpec">—</span>
+          </div>
+          <div class="exam-info-row">
+            <span class="exam-info-key">Année</span>
+            <span class="exam-info-val" id="infoYear">—</span>
+          </div>
+          <div class="exam-info-row">
+            <span class="exam-info-key">Échelle</span>
+            <span class="exam-info-val" id="infoEchelle">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card" id="progressCard" style="display:none">
+      <div class="side-card-header">Progression</div>
+      <div class="side-card-body">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:0.72rem;color:var(--ink-3)">Avancement</span>
+              <span style="font-size:0.72rem;font-weight:600;color:var(--ink)" id="progressPct">0%</span>
+            </div>
+            <div style="height:5px;background:var(--stone-200);border-radius:3px;overflow:hidden">
+              <div id="sideProgressFill" style="height:100%;background:var(--brand);border-radius:3px;transition:width 0.4s var(--ease);width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-card-header">Instructions</div>
+      <div class="side-card-body">
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:var(--ink-3);line-height:1.55">
+          <p>• Sélectionnez une ou plusieurs réponses selon l'indication.</p>
+          <p>• Cliquez <strong style="color:var(--ink)">Valider</strong> pour voir la correction.</p>
+          <p>• Lisez l'explication avant de passer à la suivante.</p>
+          <p>• Votre score est calculé en fin d'examen.</p>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+</div><!-- /quiz-shell -->
+
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
