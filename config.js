@@ -14,7 +14,7 @@ const EXAMS_CONFIG = [
     year: 2025,
     echelle: "E9",
     logo: "logos/justice.svg",
-    questionCount: 40,
+    questionCount: 60,
     duration: 60,
   },
   {
