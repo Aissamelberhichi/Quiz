@@ -4,360 +4,515 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ExamPro — Plateforme de Préparation aux Concours</title>
-  <meta name="description" content="Préparez vos concours professionnels avec nos examens interactifs." />
+  <meta name="description" content="Préparez vos concours professionnels avec des examens interactifs officiels." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- ══════════════════ HEADER ══════════════════ -->
-  <header class="site-header" role="banner">
-    <div class="header-inner">
-      <a href="index.html" class="logo-mark" aria-label="ExamPro Home">
-        <div class="logo-icon" aria-hidden="true">⚡</div>
-        <span>Exam<em>Pro</em></span>
-      </a>
+<div class="app-shell">
 
-      <div class="header-search" role="search">
-        <span class="search-icon" aria-hidden="true">🔍</span>
-        <input
-          type="search"
-          id="globalSearch"
-          placeholder="Rechercher un examen…"
-          aria-label="Rechercher un examen"
-          autocomplete="off"
-        />
-      </div>
+  <!-- ══════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════ -->
+  <aside class="sidebar" role="navigation" aria-label="Navigation principale">
 
-      <div class="header-stats" aria-label="Statistiques">
-        <span id="totalExamsCount" class="stat-badge">—</span>
-        <span style="color:var(--text-muted);font-size:0.8rem">examens disponibles</span>
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3L4 7v6c0 5 3.6 9.7 8 11 4.4-1.3 8-6 8-11V7l-8-4z"/></svg>
       </div>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-name">ExamPro</span>
+        <span class="sidebar-logo-tagline">Concours Professionnels</span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Bibliothèque</div>
+      <button class="sidebar-nav-item active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Tous les examens
+        <span class="nav-badge" id="sidebarCount">—</span>
+      </button>
+      <button class="sidebar-nav-item" onclick="setQuickFilter('Justice')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Justice
+      </button>
+      <button class="sidebar-nav-item" onclick="setQuickFilter('Education')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Éducation
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Spécialités</div>
+      <button class="sidebar-nav-item" onclick="setSpecFilter('Informatique')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Informatique
+      </button>
+      <button class="sidebar-nav-item" onclick="setSpecFilter('Gestion')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Gestion
+      </button>
+      <button class="sidebar-nav-item" onclick="setSpecFilter('Droit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14.5 4z"/></svg>
+        Droit
+      </button>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">EP</div>
+        <div class="user-info">
+          <div class="user-name">Étudiant</div>
+          <div class="user-role">Préparation concours</div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════════════════
+       TOPBAR
+  ══════════════════════════════════════════════ -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <span>Bibliothèque</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Tous les examens</span>
+      </nav>
+    </div>
+
+    <div class="topbar-search" role="search">
+      <span class="topbar-search-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </span>
+      <input
+        type="search"
+        id="globalSearch"
+        placeholder="Rechercher un examen, une spécialité…"
+        aria-label="Rechercher"
+        autocomplete="off"
+      />
+    </div>
+
+    <div class="topbar-right">
+      <div class="topbar-count" aria-label="Total examens">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <strong id="totalExamsCount">—</strong> examens
+      </div>
+      <div class="topbar-divider" aria-hidden="true"></div>
+      <button class="topbar-btn" title="Notifications" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="topbar-btn" title="Paramètres" aria-label="Paramètres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
-  <!-- ══════════════════ HERO ══════════════════ -->
-  <section class="hero" aria-labelledby="heroTitle">
-    <div class="hero-eyebrow" aria-hidden="true">
-      🏆 Concours Professionnels Maroc
+  <!-- ══════════════════════════════════════════════
+       PAGE CONTENT
+  ══════════════════════════════════════════════ -->
+  <main class="page-content" id="pageContent" aria-label="Contenu principal">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="page-eyebrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Concours Professionnels Maroc
+        </div>
+        <h1 class="page-title">Choisissez votre <em>examen</em></h1>
+        <p class="page-desc">
+          Des sujets officiels classés par institution, spécialité et année.
+          Évaluez-vous en conditions réelles avec correction instantanée.
+        </p>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="stats-row" aria-label="Statistiques de la plateforme">
+        <div class="stat-cell">
+          <span class="stat-num" id="statTotal">—</span>
+          <span class="stat-desc">Examens disponibles</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="statInstitutions">—</span>
+          <span class="stat-desc">Institutions</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="statSpecs">—</span>
+          <span class="stat-desc">Spécialités</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-num" id="statYears">—</span>
+          <span class="stat-desc">Années couvertes</span>
+        </div>
+      </div>
     </div>
-    <h1 id="heroTitle">
-      Préparez vos concours<br/>
-      avec <span class="highlight">précision</span>
-    </h1>
-    <p>
-      Accédez à des centaines de questions officielles classées par institution,
-      spécialité et année. Évaluez-vous en conditions réelles.
-    </p>
-  </section>
 
-  <!-- ══════════════════ FILTERS ══════════════════ -->
-  <section class="filters-section" aria-label="Filtres">
-    <div class="filters-bar" role="group" aria-label="Filtrer les examens">
+    <!-- Filters Panel -->
+    <section class="filters-panel" aria-label="Filtres">
+      <div class="filters-inner">
+        <div class="filter-group-wrap">
+          <span class="filter-group-label">Institution</span>
+          <div id="etabFilters" role="group" aria-label="Filtrer par institution" style="display:contents"></div>
+        </div>
+        <div class="filter-group-wrap">
+          <span class="filter-group-label">Spécialité</span>
+          <div id="specFilters" role="group" aria-label="Filtrer par spécialité" style="display:contents"></div>
+        </div>
+        <div class="filter-group-wrap">
+          <span class="filter-group-label">Année</span>
+          <div id="yearFilters" role="group" aria-label="Filtrer par année" style="display:contents"></div>
+        </div>
+        <button class="filter-reset" id="resetFilters" aria-label="Réinitialiser tous les filtres">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Réinitialiser
+        </button>
+      </div>
+    </section>
 
-      <span class="filter-label" aria-hidden="true">Institution</span>
-      <div class="filter-group" id="etabFilters" role="group" aria-label="Filtrer par institution"></div>
-
-      <div class="filters-divider" aria-hidden="true"></div>
-
-      <span class="filter-label" aria-hidden="true">Spécialité</span>
-      <div class="filter-group" id="specFilters" role="group" aria-label="Filtrer par spécialité"></div>
-
-      <div class="filters-divider" aria-hidden="true"></div>
-
-      <span class="filter-label" aria-hidden="true">Année</span>
-      <div class="filter-group" id="yearFilters" role="group" aria-label="Filtrer par année"></div>
-
-      <div class="filters-divider" aria-hidden="true"></div>
-
-      <button class="filters-reset" id="resetFilters" aria-label="Réinitialiser les filtres">
-        ✕ Réinitialiser
-      </button>
+    <!-- Results strip -->
+    <div class="results-strip" aria-live="polite" aria-atomic="true">
+      <p class="results-label" id="resultsCount"><strong>—</strong> examens</p>
+      <p class="results-label" id="pageInfo" style="color:var(--ink-4)"></p>
     </div>
-  </section>
 
-  <!-- ══════════════════ RESULTS BAR ══════════════════ -->
-  <div class="results-bar" aria-live="polite" aria-atomic="true">
-    <p class="results-count" id="resultsCount">
-      <strong>—</strong> examens
-    </p>
-    <p style="font-size:0.78rem;color:var(--text-muted)" id="pageInfo"></p>
-  </div>
+    <!-- Exams grid -->
+    <div class="exams-main">
+      <div class="exams-grid" id="examsGrid" role="list" aria-label="Liste des examens"></div>
+    </div>
 
-  <!-- ══════════════════ EXAM GRID ══════════════════ -->
-  <main class="exams-section" id="examsSection" aria-label="Liste des examens">
-    <div class="exams-grid" id="examsGrid" role="list"></div>
-  </main>
+    <!-- Pagination -->
+    <nav class="pagination-wrap" id="pagination" aria-label="Pagination"></nav>
 
-  <!-- ══════════════════ PAGINATION ══════════════════ -->
-  <nav class="pagination" id="pagination" aria-label="Pagination des examens"></nav>
+    <!-- Footer -->
+    <footer class="site-footer">
+      <span>ExamPro &copy; 2025 — Plateforme de préparation aux concours professionnels</span>
+      <div class="footer-links">
+        <a href="#" class="footer-link">Aide</a>
+        <a href="#" class="footer-link">Contribuer</a>
+        <a href="#" class="footer-link">Contact</a>
+      </div>
+    </footer>
 
-  <!-- ══════════════════ FOOTER ══════════════════ -->
-  <footer class="site-footer">
-    ExamPro &copy; 2025 — Plateforme de préparation aux concours professionnels
-  </footer>
+  </main><!-- /page-content -->
 
-  <script src="config.js"></script>
-  <script>
-  (() => {
-    'use strict';
+</div><!-- /app-shell -->
 
-    /* ── STATE ─────────────────────────────────────────── */
-    const state = {
-      filters: { etab: null, spec: null, year: null },
-      search: '',
-      page: 1,
-    };
+<script src="config.js"></script>
+<script>
+(() => {
+  'use strict';
 
-    /* ── DOM REFS ──────────────────────────────────────── */
-    const $grid       = document.getElementById('examsGrid');
-    const $pagination = document.getElementById('pagination');
-    const $count      = document.getElementById('resultsCount');
-    const $pageInfo   = document.getElementById('pageInfo');
-    const $total      = document.getElementById('totalExamsCount');
-    const $search     = document.getElementById('globalSearch');
-    const $reset      = document.getElementById('resetFilters');
+  /* ── STATE ─────────────────────────────────── */
+  const state = {
+    filters: { etab: null, spec: null, year: null },
+    search: '',
+    page: 1,
+  };
 
-    /* ── INIT ──────────────────────────────────────────── */
-    function init() {
-      $total.textContent = EXAMS_CONFIG.length;
-      buildFilters();
-      render();
-    }
+  /* ── DOM ───────────────────────────────────── */
+  const $grid       = document.getElementById('examsGrid');
+  const $pagination = document.getElementById('pagination');
+  const $count      = document.getElementById('resultsCount');
+  const $pageInfo   = document.getElementById('pageInfo');
+  const $total      = document.getElementById('totalExamsCount');
+  const $sideCount  = document.getElementById('sidebarCount');
+  const $search     = document.getElementById('globalSearch');
+  const $reset      = document.getElementById('resetFilters');
 
-    /* ── FILTER CHIPS ──────────────────────────────────── */
-    function buildFilters() {
-      renderChips('etabFilters', FILTER_OPTIONS.etabs, 'etab');
-      renderChips('specFilters', FILTER_OPTIONS.specs, 'spec');
-      renderChips('yearFilters', FILTER_OPTIONS.years, 'year');
-    }
+  /* ── INIT ──────────────────────────────────── */
+  function init() {
+    const n = EXAMS_CONFIG.length;
+    $total.textContent    = n;
+    $sideCount.textContent = n;
+    document.getElementById('statTotal').textContent        = n;
+    document.getElementById('statInstitutions').textContent = FILTER_OPTIONS.etabs.length;
+    document.getElementById('statSpecs').textContent        = FILTER_OPTIONS.specs.length;
+    document.getElementById('statYears').textContent        = FILTER_OPTIONS.years.length;
+    buildFilters();
+    render();
+  }
 
-    function renderChips(containerId, values, filterKey) {
-      const wrap = document.getElementById(containerId);
-      wrap.innerHTML = '';
-      values.forEach(val => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-chip';
-        btn.textContent = val;
-        btn.setAttribute('aria-pressed', 'false');
-        btn.dataset.value = val;
-        btn.dataset.key = filterKey;
-        btn.addEventListener('click', () => toggleFilter(filterKey, val, btn));
-        wrap.appendChild(btn);
-      });
-    }
+  /* ── FILTER CHIPS ──────────────────────────── */
+  function buildFilters() {
+    renderPills('etabFilters', FILTER_OPTIONS.etabs, 'etab');
+    renderPills('specFilters', FILTER_OPTIONS.specs,  'spec');
+    renderPills('yearFilters', FILTER_OPTIONS.years,  'year');
+  }
 
-    function toggleFilter(key, val, btnEl) {
-      const current = state.filters[key];
-      state.filters[key] = (current === val) ? null : val;
+  function renderPills(containerId, values, key) {
+    const wrap = document.getElementById(containerId);
+    wrap.innerHTML = '';
+    values.forEach(val => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-pill';
+      btn.textContent = val;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.dataset.value = val;
+      btn.dataset.key = key;
+      btn.addEventListener('click', () => toggleFilter(key, val));
+      wrap.appendChild(btn);
+    });
+  }
+
+  function toggleFilter(key, val) {
+    state.filters[key] = state.filters[key] === val ? null : val;
+    state.page = 1;
+    document.querySelectorAll(`[data-key="${key}"]`).forEach(b => {
+      const on = b.dataset.value == state.filters[key];
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on);
+    });
+    updateSidebarActive();
+    render();
+  }
+
+  function updateSidebarActive() {
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav-item')[0].classList.add('active');
+  }
+
+  $reset.addEventListener('click', () => {
+    state.filters = { etab: null, spec: null, year: null };
+    state.search = '';
+    state.page = 1;
+    $search.value = '';
+    document.querySelectorAll('.filter-pill, .sidebar-nav-item').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    document.querySelectorAll('.sidebar-nav-item')[0].classList.add('active');
+    render();
+  });
+
+  /* ── SEARCH ────────────────────────────────── */
+  let searchTimer;
+  $search.addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      state.search = e.target.value.trim().toLowerCase();
       state.page = 1;
-
-      // Update aria + class
-      document.querySelectorAll(`[data-key="${key}"]`).forEach(b => {
-        const active = b.dataset.value == state.filters[key];
-        b.classList.toggle('active', active);
-        b.setAttribute('aria-pressed', active);
-      });
       render();
-    }
+    }, 200);
+  });
 
-    $reset.addEventListener('click', () => {
-      state.filters = { etab: null, spec: null, year: null };
-      state.search  = '';
-      state.page    = 1;
-      $search.value = '';
-      document.querySelectorAll('.filter-chip').forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      render();
+  /* ── SIDEBAR SHORTCUTS ─────────────────────── */
+  window.setQuickFilter = function(etab) {
+    state.filters = { etab, spec: null, year: null };
+    state.page = 1;
+    document.querySelectorAll('[data-key="etab"]').forEach(b => {
+      const on = b.dataset.value === etab;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on);
     });
-
-    /* ── SEARCH ────────────────────────────────────────── */
-    let searchTimer;
-    $search.addEventListener('input', e => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        state.search = e.target.value.trim().toLowerCase();
-        state.page = 1;
-        render();
-      }, 220);
+    document.querySelectorAll('[data-key="spec"], [data-key="year"]').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
     });
+    render();
+  };
 
-    /* ── FILTER LOGIC ──────────────────────────────────── */
-    function getFiltered() {
-      return EXAMS_CONFIG.filter(exam => {
-        if (state.filters.etab && exam.etab !== state.filters.etab) return false;
-        if (state.filters.spec && exam.spec !== state.filters.spec) return false;
-        if (state.filters.year && exam.year !== state.filters.year) return false;
-        if (state.search) {
-          const haystack = `${exam.title} ${exam.etab} ${exam.spec} ${exam.year} ${exam.echelle}`.toLowerCase();
-          if (!haystack.includes(state.search)) return false;
-        }
-        return true;
-      });
-    }
+  window.setSpecFilter = function(spec) {
+    state.filters = { etab: null, spec, year: null };
+    state.page = 1;
+    document.querySelectorAll('[data-key="spec"]').forEach(b => {
+      const on = b.dataset.value === spec;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on);
+    });
+    document.querySelectorAll('[data-key="etab"], [data-key="year"]').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    render();
+  };
 
-    /* ── RENDER ────────────────────────────────────────── */
-    function render() {
-      const filtered = getFiltered();
-      const total    = filtered.length;
-      const pages    = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-      if (state.page > pages) state.page = pages;
-
-      const start  = (state.page - 1) * ITEMS_PER_PAGE;
-      const slice  = filtered.slice(start, start + ITEMS_PER_PAGE);
-
-      // Results bar
-      $count.innerHTML = `<strong>${total}</strong> examen${total !== 1 ? 's' : ''}`;
-      $pageInfo.textContent = total > ITEMS_PER_PAGE
-        ? `Page ${state.page} sur ${pages}`
-        : '';
-
-      // Grid
-      $grid.innerHTML = '';
-      if (slice.length === 0) {
-        $grid.innerHTML = `
-          <div class="empty-state" role="status">
-            <div class="empty-state-icon">🔍</div>
-            <h3>Aucun examen trouvé</h3>
-            <p>Modifiez vos filtres ou votre recherche pour trouver des examens.</p>
-          </div>`;
-      } else {
-        slice.forEach((exam, i) => {
-          const card = createCard(exam, i);
-          $grid.appendChild(card);
-        });
+  /* ── FILTER LOGIC ──────────────────────────── */
+  function getFiltered() {
+    return EXAMS_CONFIG.filter(exam => {
+      if (state.filters.etab && exam.etab !== state.filters.etab) return false;
+      if (state.filters.spec && exam.spec !== state.filters.spec) return false;
+      if (state.filters.year && exam.year !== state.filters.year) return false;
+      if (state.search) {
+        const hay = `${exam.title} ${exam.etab} ${exam.spec} ${exam.year} ${exam.echelle}`.toLowerCase();
+        if (!hay.includes(state.search)) return false;
       }
+      return true;
+    });
+  }
 
-      renderPagination(pages);
+  /* ── RENDER ────────────────────────────────── */
+  function render() {
+    const filtered = getFiltered();
+    const total    = filtered.length;
+    const pages    = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+    if (state.page > pages) state.page = pages;
+
+    const start = (state.page - 1) * ITEMS_PER_PAGE;
+    const slice = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+    $count.innerHTML = `<strong>${total}</strong> examen${total !== 1 ? 's' : ''}`;
+    $pageInfo.textContent = total > ITEMS_PER_PAGE ? `Page ${state.page} / ${pages}` : '';
+
+    $grid.innerHTML = '';
+    if (slice.length === 0) {
+      $grid.innerHTML = `
+        <div class="empty-state" role="status">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <h3>Aucun examen trouvé</h3>
+          <p>Essayez de modifier vos filtres ou votre recherche.</p>
+        </div>`;
+    } else {
+      slice.forEach((exam, i) => $grid.appendChild(createCard(exam, i)));
     }
 
-    /* ── CARD ──────────────────────────────────────────── */
-    function createCard(exam, animIndex) {
-      const article = document.createElement('article');
-      article.className = 'exam-card';
-      article.setAttribute('role', 'listitem');
-      article.setAttribute('aria-label', exam.title);
-      article.style.animationDelay = `${animIndex * 60}ms`;
-      article.tabIndex = 0;
+    renderPagination(pages);
+  }
 
-      const institutionEmojis = { Justice: '⚖️', Education: '📚' };
-      const emoji = institutionEmojis[exam.etab] || '🏛️';
+  /* ── CARD ──────────────────────────────────── */
+  const SPEC_COLORS = {
+    Informatique: 'justice',
+    Gestion: 'gestion',
+    Droit: 'droit',
+  };
+  const ETAB_COLORS = { Justice: 'justice', Education: 'education' };
+  const ETAB_ICONS  = { Justice: '⚖️', Education: '📚', default: '🏛️' };
 
-      article.innerHTML = `
-        <div class="card-header">
-          <div class="card-logo-fallback" aria-hidden="true" title="${exam.etab}">
-            ${emoji}
+  function createCard(exam, animIdx) {
+    const article = document.createElement('article');
+    article.className = 'exam-card';
+    article.setAttribute('role', 'listitem');
+    article.setAttribute('aria-label', exam.title);
+    article.tabIndex = 0;
+    article.style.animationDelay = `${animIdx * 55}ms`;
+
+    const accentClass = ETAB_COLORS[exam.etab] || 'justice';
+    const icon = ETAB_ICONS[exam.etab] || ETAB_ICONS.default;
+    const isNew = exam.year >= 2025;
+
+    article.innerHTML = `
+      <div class="card-accent ${accentClass}"></div>
+      <div class="card-body-wrap">
+        <div class="card-top">
+          <div class="card-institution">
+            <div class="card-inst-icon" aria-hidden="true">${icon}</div>
+            <div class="card-inst-info">
+              <div class="card-inst-name">${exam.etab}</div>
+              <div class="card-inst-year">${exam.year}</div>
+            </div>
           </div>
-          <div class="card-meta">
-            <span class="badge badge-year">${exam.year}</span>
+          <div class="card-badges">
+            ${isNew ? '<span class="badge badge-new">Nouveau</span>' : ''}
             <span class="badge badge-echelle">${exam.echelle}</span>
           </div>
         </div>
 
-        <div class="card-body">
+        <div class="card-title-area">
           <h3 class="card-title">${exam.title}</h3>
-          <p class="card-subtitle">
-            <span>${exam.etab}</span>
-            <span class="dot" aria-hidden="true"></span>
-            <span>${exam.spec}</span>
+          <p class="card-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            ${exam.spec}
           </p>
         </div>
 
-        <div class="card-footer">
-          <div class="card-info">
-            <div class="card-info-item">
-              <span class="card-info-label">Questions</span>
-              <span class="card-info-value">${exam.questionCount || '—'}</span>
-            </div>
-            <div class="card-info-item">
-              <span class="card-info-label">Durée</span>
-              <span class="card-info-value">${exam.duration ? exam.duration + ' min' : '—'}</span>
-            </div>
+        <div class="card-stats">
+          <div class="card-stat">
+            <div class="card-stat-val">${exam.questionCount || '—'}</div>
+            <div class="card-stat-lbl">Questions</div>
           </div>
-          <div class="card-cta" aria-hidden="true">→</div>
+          <div class="card-stat">
+            <div class="card-stat-val">${exam.duration ? exam.duration + ' min' : '—'}</div>
+            <div class="card-stat-lbl">Durée</div>
+          </div>
+          <div class="card-stat">
+            <div class="card-stat-val">${exam.echelle}</div>
+            <div class="card-stat-lbl">Échelle</div>
+          </div>
         </div>
-      `;
 
-      // Try to load real logo, fallback to emoji already rendered
-      const img = new Image();
-      img.onload = () => {
-        const fallback = article.querySelector('.card-logo-fallback');
-        if (fallback) {
-          const realImg = document.createElement('img');
-          realImg.src = exam.logo;
-          realImg.alt = exam.etab;
-          realImg.className = 'card-logo';
-          fallback.replaceWith(realImg);
-        }
-      };
-      img.src = exam.logo;
+        <div class="card-footer-row">
+          <div class="card-status">
+            <div class="status-dot"></div>
+            Disponible
+          </div>
+          <button class="card-cta" aria-label="Commencer ${exam.title}">
+            Commencer
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
 
-      // Click & keyboard nav
-      const launch = () => {
-        localStorage.setItem('selectedExam', JSON.stringify(exam));
-        window.location.href = 'quiz.html';
-      };
-      article.addEventListener('click', launch);
-      article.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); }
-      });
+    const launch = () => {
+      localStorage.setItem('selectedExam', JSON.stringify(exam));
+      window.location.href = 'quiz.html';
+    };
 
-      return article;
-    }
+    article.addEventListener('click', launch);
+    article.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); }
+    });
 
-    /* ── PAGINATION ────────────────────────────────────── */
-    function renderPagination(totalPages) {
-      $pagination.innerHTML = '';
-      if (totalPages <= 1) return;
+    return article;
+  }
 
-      const add = (label, page, disabled = false, active = false, isEllipsis = false) => {
-        if (isEllipsis) {
-          const span = document.createElement('span');
-          span.className = 'page-ellipsis';
-          span.textContent = '…';
-          $pagination.appendChild(span);
-          return;
-        }
-        const btn = document.createElement('button');
-        btn.className = 'page-btn' + (active ? ' active' : '');
-        btn.textContent = label;
-        btn.disabled = disabled;
-        btn.setAttribute('aria-label', `Page ${page}`);
-        if (active) btn.setAttribute('aria-current', 'page');
-        btn.addEventListener('click', () => {
-          state.page = page;
-          render();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        $pagination.appendChild(btn);
-      };
+  /* ── PAGINATION ────────────────────────────── */
+  function renderPagination(totalPages) {
+    $pagination.innerHTML = '';
+    if (totalPages <= 1) return;
 
-      add('←', state.page - 1, state.page === 1);
-
-      const range = getPageRange(state.page, totalPages);
-      let prev = null;
-      range.forEach(p => {
-        if (prev !== null && p - prev > 1) add(null, null, false, false, true);
-        add(p, p, false, p === state.page);
-        prev = p;
-      });
-
-      add('→', state.page + 1, state.page === totalPages);
-    }
-
-    function getPageRange(current, total) {
-      const delta = 2;
-      const pages = new Set([1, total]);
-      for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
-        pages.add(i);
+    const add = (label, page, disabled = false, active = false, ellipsis = false) => {
+      if (ellipsis) {
+        const s = document.createElement('span');
+        s.className = 'page-ellipsis';
+        s.textContent = '…';
+        $pagination.appendChild(s);
+        return;
       }
-      return [...pages].sort((a, b) => a - b);
-    }
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (active ? ' active' : '');
+      btn.innerHTML = label;
+      btn.disabled = disabled;
+      if (active) btn.setAttribute('aria-current', 'page');
+      btn.setAttribute('aria-label', `Page ${page}`);
+      btn.addEventListener('click', () => {
+        state.page = page;
+        render();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      $pagination.appendChild(btn);
+    };
 
-    /* ── BOOT ──────────────────────────────────────────── */
-    init();
-  })();
-  </script>
+    add(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="m15 18-6-6 6-6"/></svg>`, state.page - 1, state.page === 1);
+
+    const range = buildRange(state.page, totalPages);
+    let prev = null;
+    range.forEach(p => {
+      if (prev !== null && p - prev > 1) add(null, null, false, false, true);
+      add(p, p, false, p === state.page);
+      prev = p;
+    });
+
+    add(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="m9 18 6-6-6-6"/></svg>`, state.page + 1, state.page === totalPages);
+  }
+
+  function buildRange(cur, tot) {
+    const d = 2, pages = new Set([1, tot]);
+    for (let i = Math.max(2, cur - d); i <= Math.min(tot - 1, cur + d); i++) pages.add(i);
+    return [...pages].sort((a, b) => a - b);
+  }
+
+  init();
+})();
+</script>
 </body>
 </html>

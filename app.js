@@ -1,469 +1,523 @@
 /**
- * EXAM PLATFORM — APP.JS
- * Quiz engine: load Excel → parse → render questions → score
+ * EXAMPRO — APP.JS  (Quiz Engine)
+ * Drives the quiz.html professional SaaS UI
  */
-
 'use strict';
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════
    STATE
-════════════════════════════════════════════════════════════ */
-const QuizState = {
-  exam:         null,   // exam config object
-  questions:    [],     // parsed question array
-  current:      0,      // current question index
-  selected:     [],     // indices of selected options
-  answered:     false,  // whether current Q is submitted
-  score:        0,      // correct answers count
-  timer:        null,   // setInterval ref
-  timeLeft:     0,      // seconds remaining
-  timerEnabled: false,
+═══════════════════════════════════════════════ */
+const Q = {
+  exam:      null,
+  questions: [],
+  current:   0,
+  selected:  [],
+  answered:  false,
+  score:     0,
+  wrong:     0,
+  timer:     null,
+  timeLeft:  0,
+  results:   [],   // { correct: bool } per question
 };
 
-/* ════════════════════════════════════════════════════════════
-   DOM REFS (resolved after DOMContentLoaded)
-════════════════════════════════════════════════════════════ */
-let DOM = {};
+/* ═══════════════════════════════════════════════
+   DOM  (lazy-resolved after DOMContentLoaded)
+═══════════════════════════════════════════════ */
+let D = {};
 
-/* ════════════════════════════════════════════════════════════
-   BOOT
-════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
-  DOM = {
-    quizApp:       document.getElementById('quizApp'),
-    loadingScreen: document.getElementById('loadingScreen'),
-    errorScreen:   document.getElementById('errorScreen'),
-    errorMsg:      document.getElementById('errorMsg'),
-    quizScreen:    document.getElementById('quizScreen'),
-    resultsScreen: document.getElementById('resultsScreen'),
+  D = {
+    loadingScreen:   document.getElementById('loadingScreen'),
+    errorScreen:     document.getElementById('errorScreen'),
+    errorTitle:      document.getElementById('errorTitle'),
+    errorMsg:        document.getElementById('errorMsg'),
+    quizScreen:      document.getElementById('quizScreen'),
+    resultsScreen:   document.getElementById('resultsScreen'),
 
-    // Header
-    quizTitle:      document.getElementById('quizTitle'),
-    quizSubtitle:   document.getElementById('quizSubtitle'),
-    timerDisplay:   document.getElementById('timerDisplay'),
-    progressFill:   document.getElementById('progressFill'),
+    // Topbar
+    quizTitle:       document.getElementById('quizTitle'),
+    progressFill:    document.getElementById('progressFill'),
+    progressBar:     document.getElementById('progressBar'),
+    timerDisplay:    document.getElementById('timerDisplay'),
+    timerText:       document.getElementById('timerText'),
+
+    // Left panel
+    navGrid:         document.getElementById('questionNavGrid'),
+    liveScoreCard:   document.getElementById('liveScoreCard'),
+    sidePanelScore:  document.getElementById('sidePanelScore'),
+    sidePanelTotal:  document.getElementById('sidePanelTotal'),
+    sideCorrect:     document.getElementById('sideCorrect'),
+    sideWrong:       document.getElementById('sideWrong'),
+    sideRemaining:   document.getElementById('sideRemaining'),
+
+    // Right panel
+    infoTitle:       document.getElementById('infoTitle'),
+    infoEtab:        document.getElementById('infoEtab'),
+    infoSpec:        document.getElementById('infoSpec'),
+    infoYear:        document.getElementById('infoYear'),
+    infoEchelle:     document.getElementById('infoEchelle'),
+    progressCard:    document.getElementById('progressCard'),
+    progressPct:     document.getElementById('progressPct'),
+    sideProgressFill:document.getElementById('sideProgressFill'),
 
     // Question
-    qIndex:         document.getElementById('qIndex'),
-    qTotal:         document.getElementById('qTotal'),
-    scoreLive:      document.getElementById('scoreLive'),
-    questionText:   document.getElementById('questionText'),
-    questionHint:   document.getElementById('questionHint'),
-    optionsList:    document.getElementById('optionsList'),
-    explanationBox: document.getElementById('explanationBox'),
-    explanationText:document.getElementById('explanationText'),
+    qIndex:          document.getElementById('qIndex'),
+    qTotal:          document.getElementById('qTotal'),
+    qTypeBadge:      document.getElementById('qTypeBadge'),
+    qTypeLabel:      document.getElementById('qTypeLabel'),
+    questionTag:     document.getElementById('questionTag'),
+    questionText:    document.getElementById('questionText'),
+    optionsList:     document.getElementById('optionsList'),
+    explanationBox:  document.getElementById('explanationBox'),
+    explanationText: document.getElementById('explanationText'),
 
     // Buttons
-    btnSubmit:      document.getElementById('btnSubmit'),
-    btnNext:        document.getElementById('btnNext'),
+    btnSubmit:       document.getElementById('btnSubmit'),
+    btnNext:         document.getElementById('btnNext'),
+    backBtn:         document.getElementById('backBtn'),
 
     // Results
-    scorePercent:   document.getElementById('scorePercent'),
-    scoreRingFill:  document.getElementById('scoreRingFill'),
-    statCorrect:    document.getElementById('statCorrect'),
-    statWrong:      document.getElementById('statWrong'),
-    statTotal:      document.getElementById('statTotal'),
-    btnRetry:       document.getElementById('btnRetry'),
-    btnHome:        document.getElementById('btnHome'),
-    resultsTitle:   document.getElementById('resultsTitle'),
-    resultsSub:     document.getElementById('resultsSub'),
-    resultsTrophy:  document.getElementById('resultsTrophy'),
+    resultsGrade:    document.getElementById('resultsGrade'),
+    resultsTitle:    document.getElementById('resultsTitle'),
+    resultsSub:      document.getElementById('resultsSub'),
+    scorePercent:    document.getElementById('scorePercent'),
+    scoreRingFill:   document.getElementById('scoreRingFill'),
+    statCorrect:     document.getElementById('statCorrect'),
+    statWrong:       document.getElementById('statWrong'),
+    statTotal:       document.getElementById('statTotal'),
+    btnRetry:        document.getElementById('btnRetry'),
+    btnHome:         document.getElementById('btnHome'),
   };
 
-  // Retrieve exam from localStorage
+  // Load exam from localStorage
   let exam;
-  try {
-    exam = JSON.parse(localStorage.getItem('selectedExam'));
-  } catch (e) {
-    exam = null;
-  }
+  try { exam = JSON.parse(localStorage.getItem('selectedExam')); }
+  catch(e) { exam = null; }
 
-  if (!exam || !exam.file) {
-    showError('Aucun examen sélectionné.', 'Retournez à l\'accueil et choisissez un examen.');
+  if (!exam?.file) {
+    showError('Aucun examen sélectionné', 'Retournez à l\'accueil et choisissez un examen.');
     return;
   }
 
-  QuizState.exam = exam;
+  Q.exam = exam;
+  populateExamInfo(exam);
+  D.quizTitle.textContent = exam.title;
 
-  // Populate header
-  DOM.quizTitle.textContent    = exam.title;
-  DOM.quizSubtitle.textContent = `${exam.etab} · ${exam.echelle} · ${exam.year}`;
-
-  // Timer opt-in
-  QuizState.timerEnabled = !!exam.duration;
-  if (!QuizState.timerEnabled) {
-    DOM.timerDisplay.style.display = 'none';
+  // Timer
+  if (!exam.duration) {
+    D.timerDisplay.style.display = 'none';
   }
 
-  // Load file
-  showLoading();
+  // Events
+  D.btnSubmit.addEventListener('click', handleSubmit);
+  D.btnNext.addEventListener('click', handleNext);
+  D.btnRetry.addEventListener('click', () => startQuiz());
+  D.btnHome.addEventListener('click', () => window.location.href = 'index.html');
+  D.backBtn.addEventListener('click', () => window.location.href = 'index.html');
+
+  // Load
+  showScreen('loading');
   try {
-    const questions = await loadExamFile(exam.file);
-    if (!questions || questions.length === 0) {
-      throw new Error('Aucune question trouvée dans ce fichier.');
-    }
-    QuizState.questions = questions;
+    const qs = await loadExamFile(exam.file);
+    if (!qs?.length) throw new Error('Aucune question trouvée dans ce fichier.');
+    Q.questions = qs;
     startQuiz();
-  } catch (err) {
+  } catch(err) {
     showError('Impossible de charger l\'examen', err.message);
   }
 });
 
-/* ════════════════════════════════════════════════════════════
-   EXCEL LOADER  (SheetJS via CDN)
-════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   EXAM INFO PANEL
+═══════════════════════════════════════════════ */
+function populateExamInfo(exam) {
+  D.infoTitle.textContent   = exam.title;
+  D.infoEtab.textContent    = exam.etab;
+  D.infoSpec.textContent    = exam.spec;
+  D.infoYear.textContent    = exam.year;
+  D.infoEchelle.textContent = exam.echelle;
+}
+
+/* ═══════════════════════════════════════════════
+   EXCEL LOADER
+═══════════════════════════════════════════════ */
 async function loadExamFile(filename) {
-  // Attempt fetch from /exams directory
-  const url = `exams/${filename}`;
-  let arrayBuffer;
-
+  let ab;
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Fichier introuvable: ${filename} (HTTP ${response.status})`);
-    }
-    arrayBuffer = await response.arrayBuffer();
-  } catch (fetchErr) {
-    throw new Error(`Impossible de récupérer le fichier "${filename}". Vérifiez qu'il existe dans le dossier /exams et que vous utilisez un serveur local (Live Server / http-server).`);
+    const r = await fetch(`exams/${filename}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status} — ${filename}`);
+    ab = await r.arrayBuffer();
+  } catch(e) {
+    throw new Error(`Fichier introuvable : "${filename}". Vérifiez qu'il est dans /exams/ et que vous utilisez un serveur local (Live Server).`);
   }
 
-  // Parse with SheetJS
-  if (typeof XLSX === 'undefined') {
-    throw new Error('La bibliothèque XLSX (SheetJS) est introuvable. Vérifiez votre connexion internet.');
-  }
-
-  const workbook  = XLSX.read(arrayBuffer, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const sheet     = workbook.Sheets[sheetName];
-  const raw       = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-  return parseQuestions(raw);
+  if (typeof XLSX === 'undefined') throw new Error('Bibliothèque XLSX manquante.');
+  const wb    = XLSX.read(ab, { type: 'array' });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows  = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  return parseQuestions(rows);
 }
 
-/* ════════════════════════════════════════════════════════════
-   PARSE  — Normalize Excel rows → question objects
-   Expected columns (case-insensitive match):
-     Question | Answer Option 1..6 | Correct Answers | Overall Explanation
-════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   PARSER
+═══════════════════════════════════════════════ */
 function parseQuestions(rows) {
-  // Build a flexible key normalizer
-  const norm = str => String(str).toLowerCase().replace(/[\s_\-]/g, '');
+  const n = s => String(s).toLowerCase().replace(/[\s_\-]/g, '');
+  return rows.map((row, idx) => {
+    const qKey = Object.keys(row).find(k => n(k).includes('question'));
+    const text = qKey ? String(row[qKey]).trim() : '';
+    if (!text) return null;
 
-  return rows
-    .map((row, idx) => {
-      // Find question column
-      const questionKey = Object.keys(row).find(k => norm(k).includes('question'));
-      const text = questionKey ? String(row[questionKey]).trim() : '';
-      if (!text) return null;
-
-      // Find option columns (Answer Option 1 … 6)
-      const options = [];
-      for (let i = 1; i <= 6; i++) {
-        const optKey = Object.keys(row).find(k => {
-          const n = norm(k);
-          return n.includes('answeroption' + i) || n.includes('option' + i) || n.includes('reponse' + i) || n === ('choix' + i);
-        });
-        if (optKey && String(row[optKey]).trim()) {
-          options.push(String(row[optKey]).trim());
-        }
-      }
-
-      // Find correct answers column
-      const correctKey = Object.keys(row).find(k => {
-        const n = norm(k);
-        return n.includes('correctanswer') || n.includes('bonnesreponses') || n.includes('reponsescorrectes') || n.includes('answercorrect');
+    const options = [];
+    for (let i = 1; i <= 6; i++) {
+      const k = Object.keys(row).find(k => {
+        const nk = n(k);
+        return nk === ('answeroption' + i) || nk === ('option' + i) || nk === ('reponse' + i) || nk === ('choix' + i);
       });
-      let correctRaw = correctKey ? String(row[correctKey]).trim() : '';
+      if (k && String(row[k]).trim()) options.push(String(row[k]).trim());
+    }
 
-      // Parse "1;3" or "1,3" or "1" → [0, 2] (zero-indexed)
-      const correctIndices = correctRaw
-        .split(/[;,\s]+/)
-        .map(s => parseInt(s.trim(), 10) - 1)
-        .filter(n => !isNaN(n) && n >= 0 && n < options.length);
+    const cKey = Object.keys(row).find(k => {
+      const nk = n(k);
+      return nk.includes('correctanswer') || nk.includes('bonnesreponses') || nk.includes('reponsescorrectes');
+    });
+    const correctRaw = cKey ? String(row[cKey]).trim() : '';
+    const correctIndices = correctRaw
+      .split(/[;,\s]+/)
+      .map(s => parseInt(s.trim(), 10) - 1)
+      .filter(n => !isNaN(n) && n >= 0 && n < options.length);
 
-      // Find explanation column
-      const explanationKey = Object.keys(row).find(k => {
-        const n = norm(k);
-        return n.includes('explanation') || n.includes('explication') || n.includes('justification');
-      });
-      const explanation = explanationKey ? String(row[explanationKey]).trim() : '';
+    const eKey = Object.keys(row).find(k => {
+      const nk = n(k);
+      return nk.includes('explanation') || nk.includes('explication') || nk.includes('justification');
+    });
+    const explanation = eKey ? String(row[eKey]).trim() : '';
 
-      return {
-        id: idx + 1,
-        text,
-        options,
-        correctIndices,
-        explanation,
-        isMultiple: correctIndices.length > 1,
-      };
-    })
-    .filter(Boolean);
+    return { id: idx + 1, text, options, correctIndices, explanation, isMultiple: correctIndices.length > 1 };
+  }).filter(Boolean);
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════
    QUIZ FLOW
-════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════ */
 function startQuiz() {
-  QuizState.current  = 0;
-  QuizState.selected = [];
-  QuizState.answered = false;
-  QuizState.score    = 0;
+  Q.current  = 0;
+  Q.selected = [];
+  Q.answered = false;
+  Q.score    = 0;
+  Q.wrong    = 0;
+  Q.results  = [];
 
-  if (QuizState.timerEnabled && QuizState.exam.duration) {
-    QuizState.timeLeft = QuizState.exam.duration * 60;
+  if (Q.exam?.duration) {
+    Q.timeLeft = Q.exam.duration * 60;
     startTimer();
   }
 
+  buildNavGrid();
+  D.liveScoreCard.style.display = 'block';
+  D.progressCard.style.display  = 'block';
+  D.sidePanelTotal.textContent  = Q.questions.length;
+  updateSidePanel();
+
   showScreen('quiz');
   renderQuestion();
-  setupButtons();
 }
 
-function setupButtons() {
-  DOM.btnSubmit.addEventListener('click', handleSubmit);
-  DOM.btnNext.addEventListener('click', handleNext);
-  DOM.btnRetry.addEventListener('click', () => startQuiz());
-  DOM.btnHome.addEventListener('click', () => { window.location.href = 'index.html'; });
-  document.getElementById('backBtn').addEventListener('click', () => { window.location.href = 'index.html'; });
+/* ── BUILD NAV GRID ──────────────────────────── */
+function buildNavGrid() {
+  D.navGrid.innerHTML = '';
+  Q.questions.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'q-nav-dot';
+    dot.textContent = i + 1;
+    dot.setAttribute('aria-label', `Question ${i + 1}`);
+    dot.dataset.idx = i;
+    dot.addEventListener('click', () => {
+      if (!Q.answered && Q.current !== i) {
+        // navigate only if current is answered or not yet started
+        if (Q.results[Q.current] !== undefined || Q.current === i) {
+          Q.current = i;
+          Q.selected = [];
+          Q.answered = false;
+          renderQuestion();
+          updateNavGrid();
+        }
+      }
+    });
+    D.navGrid.appendChild(dot);
+  });
+  updateNavGrid();
 }
 
-/* ── RENDER QUESTION ──────────────────────────────────────── */
+function updateNavGrid() {
+  D.navGrid.querySelectorAll('.q-nav-dot').forEach((dot, i) => {
+    dot.className = 'q-nav-dot';
+    if (i === Q.current) dot.classList.add('current');
+    else if (Q.results[i] === true)  dot.classList.add('correct');
+    else if (Q.results[i] === false) dot.classList.add('wrong');
+  });
+}
+
+/* ── SIDE PANEL ──────────────────────────────── */
+function updateSidePanel() {
+  const answered  = Q.results.length;
+  const remaining = Q.questions.length - answered;
+  const pct = Q.questions.length ? Math.round((answered / Q.questions.length) * 100) : 0;
+
+  D.sidePanelScore.textContent = Q.score;
+  D.sideCorrect.textContent    = Q.score;
+  D.sideWrong.textContent      = Q.wrong;
+  D.sideRemaining.textContent  = remaining;
+  D.progressPct.textContent    = pct + '%';
+  D.sideProgressFill.style.width = pct + '%';
+
+  // Main progress bar
+  const qPct = Math.round((Q.current / Q.questions.length) * 100);
+  D.progressFill.style.width = qPct + '%';
+  D.progressBar.setAttribute('aria-valuenow', qPct);
+}
+
+/* ── RENDER QUESTION ─────────────────────────── */
 function renderQuestion() {
-  const q   = QuizState.questions[QuizState.current];
-  const idx = QuizState.current;
-  const tot = QuizState.questions.length;
+  const q   = Q.questions[Q.current];
+  const idx = Q.current;
+  const tot = Q.questions.length;
+  const pad = n => String(n).padStart(2, '0');
 
-  // Progress
-  const pct = Math.round(((idx) / tot) * 100);
-  DOM.progressFill.style.width = pct + '%';
+  D.qIndex.textContent    = idx + 1;
+  D.qTotal.textContent    = tot;
+  D.questionTag.textContent = `Q${pad(idx + 1)}`;
+  D.questionText.textContent = q.text;
 
-  // Counter
-  DOM.qIndex.textContent = idx + 1;
-  DOM.qTotal.textContent = tot;
-  DOM.scoreLive.textContent = `${QuizState.score} / ${idx}`;
-
-  // Question text
-  DOM.questionText.textContent = q.text;
-  DOM.questionHint.textContent = q.isMultiple
-    ? '☑ Plusieurs réponses possibles'
-    : '○ Une seule réponse correcte';
+  // Type badge
+  const multi = q.isMultiple;
+  D.qTypeBadge.className = `q-type-badge ${multi ? 'multiple' : 'single'}`;
+  D.qTypeLabel.textContent = multi ? 'Plusieurs réponses' : 'Réponse unique';
 
   // Options
-  DOM.optionsList.innerHTML = '';
+  D.optionsList.innerHTML = '';
+  const LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
   q.options.forEach((opt, i) => {
     const li = document.createElement('li');
     li.className = 'option-item';
     li.setAttribute('role', 'option');
     li.setAttribute('aria-selected', 'false');
-    li.setAttribute('tabindex', '0');
-    li.dataset.index = i;
-
-    const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+    li.tabIndex = 0;
+    li.dataset.idx = i;
     li.innerHTML = `
-      <div class="option-marker">${labels[i]}</div>
+      <div class="option-marker">
+        <span class="option-marker-lbl">${LABELS[i]}</span>
+        <svg class="option-marker-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
       <span class="option-text">${opt}</span>
     `;
-
-    li.addEventListener('click',   () => toggleOption(i));
+    li.addEventListener('click', () => toggleOption(i));
     li.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOption(i); }
     });
-    DOM.optionsList.appendChild(li);
+    D.optionsList.appendChild(li);
   });
 
-  // Reset state
-  QuizState.selected = [];
-  QuizState.answered = false;
-  DOM.explanationBox.style.display = 'none';
-  DOM.btnSubmit.disabled = true;
-  DOM.btnSubmit.style.display = 'inline-flex';
-  DOM.btnNext.style.display = 'none';
+  // Reset UI
+  Q.selected = [];
+  Q.answered = false;
+  D.explanationBox.style.display = 'none';
+  D.btnSubmit.disabled = true;
+  D.btnSubmit.style.display = 'inline-flex';
+  D.btnNext.style.display   = 'none';
+
+  // Scroll to top
+  const main = document.getElementById('quizScreen');
+  if (main) main.scrollTop = 0;
 }
 
-/* ── TOGGLE OPTION ─────────────────────────────────────────── */
-function toggleOption(index) {
-  if (QuizState.answered) return;
-
-  const q = QuizState.questions[QuizState.current];
-  const sel = QuizState.selected;
+/* ── TOGGLE OPTION ───────────────────────────── */
+function toggleOption(i) {
+  if (Q.answered) return;
+  const q   = Q.questions[Q.current];
+  const sel = Q.selected;
 
   if (q.isMultiple) {
-    const pos = sel.indexOf(index);
-    if (pos === -1) sel.push(index);
-    else sel.splice(pos, 1);
+    const pos = sel.indexOf(i);
+    pos === -1 ? sel.push(i) : sel.splice(pos, 1);
   } else {
-    // Single choice — deselect all others
-    QuizState.selected = sel[0] === index ? [] : [index];
+    Q.selected = sel[0] === i ? [] : [i];
   }
 
-  // Update visuals
-  document.querySelectorAll('.option-item').forEach(li => {
-    const i = parseInt(li.dataset.index);
-    const isSelected = QuizState.selected.includes(i);
-    li.classList.toggle('selected', isSelected);
-    li.setAttribute('aria-selected', isSelected);
+  D.optionsList.querySelectorAll('.option-item').forEach(li => {
+    const idx = parseInt(li.dataset.idx);
+    const on  = Q.selected.includes(idx);
+    li.classList.toggle('selected', on);
+    li.setAttribute('aria-selected', on);
   });
 
-  DOM.btnSubmit.disabled = QuizState.selected.length === 0;
+  D.btnSubmit.disabled = Q.selected.length === 0;
 }
 
-/* ── SUBMIT ─────────────────────────────────────────────────── */
+/* ── SUBMIT ──────────────────────────────────── */
 function handleSubmit() {
-  if (QuizState.answered) return;
-  QuizState.answered = true;
+  if (Q.answered) return;
+  Q.answered = true;
 
-  const q       = QuizState.questions[QuizState.current];
+  const q       = Q.questions[Q.current];
   const correct = q.correctIndices;
-  const selected = QuizState.selected;
+  const sel     = Q.selected;
 
-  // Compare sets
-  const isFullyCorrect =
-    selected.length === correct.length &&
-    correct.every(i => selected.includes(i));
-
-  if (isFullyCorrect) QuizState.score++;
+  const isCorrect = sel.length === correct.length && correct.every(i => sel.includes(i));
+  if (isCorrect) Q.score++; else Q.wrong++;
+  Q.results[Q.current] = isCorrect;
 
   // Color options
-  document.querySelectorAll('.option-item').forEach(li => {
-    const i = parseInt(li.dataset.index);
+  D.optionsList.querySelectorAll('.option-item').forEach(li => {
+    const i = parseInt(li.dataset.idx);
     li.classList.add('disabled');
     li.removeAttribute('tabindex');
+    li.classList.remove('selected');
 
-    if (correct.includes(i)) {
+    if (correct.includes(i) && sel.includes(i)) {
       li.classList.add('correct');
-      li.classList.remove('selected');
-    } else if (selected.includes(i)) {
+    } else if (correct.includes(i)) {
+      // Correct but not selected — show as missed
+      li.classList.add('correct');
+      li.style.opacity = '0.7';
+    } else if (sel.includes(i)) {
       li.classList.add('wrong');
-      li.classList.remove('selected');
     }
   });
 
   // Explanation
   if (q.explanation) {
-    DOM.explanationText.textContent = q.explanation;
-    DOM.explanationBox.style.display = 'block';
+    D.explanationText.textContent = q.explanation;
+    D.explanationBox.style.display = 'block';
   }
 
-  // Live score
-  DOM.scoreLive.textContent = `${QuizState.score} / ${QuizState.current + 1}`;
+  // Update nav + side panel
+  updateNavGrid();
+  updateSidePanel();
 
-  // Toggle buttons
-  DOM.btnSubmit.style.display = 'none';
-  DOM.btnNext.style.display   = 'inline-flex';
+  // Buttons
+  const isLast = Q.current === Q.questions.length - 1;
+  D.btnSubmit.style.display = 'none';
+  D.btnNext.style.display   = 'inline-flex';
 
-  const isLast = QuizState.current === QuizState.questions.length - 1;
-  DOM.btnNext.textContent = isLast ? '🏁 Voir les résultats →' : 'Question suivante →';
-  DOM.btnNext.className   = isLast ? 'btn btn-success' : 'btn btn-primary';
+  if (isLast) {
+    D.btnNext.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Voir les résultats
+    `;
+    D.btnNext.className = 'btn btn-brand';
+  } else {
+    D.btnNext.innerHTML = `Suivant <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`;
+    D.btnNext.className = 'btn btn-primary';
+  }
 }
 
-/* ── NEXT ───────────────────────────────────────────────────── */
+/* ── NEXT ────────────────────────────────────── */
 function handleNext() {
-  const isLast = QuizState.current === QuizState.questions.length - 1;
-  if (isLast) {
+  if (Q.current === Q.questions.length - 1) {
     stopTimer();
     showResults();
-    return;
+  } else {
+    Q.current++;
+    Q.selected = [];
+    Q.answered = false;
+    renderQuestion();
+    updateNavGrid();
+    updateSidePanel();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  QuizState.current++;
-  renderQuestion();
-
-  // Smooth scroll to top of quiz body
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════
    RESULTS
-════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════ */
 function showResults() {
-  const total   = QuizState.questions.length;
-  const correct = QuizState.score;
-  const wrong   = total - correct;
-  const pct     = Math.round((correct / total) * 100);
+  const total = Q.questions.length;
+  const pct   = Math.round((Q.score / total) * 100);
 
-  // Progress ring: circumference = 2π × r = 2π × 65 ≈ 408.4
-  const C = 408;
-  DOM.scoreRingFill.style.strokeDashoffset = C - (C * pct / 100);
-  DOM.scoreRingFill.style.stroke = pct >= 70 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
+  // Ring (circumference of r=60 → 2π×60 ≈ 376.99)
+  const C = 376;
+  D.scoreRingFill.style.strokeDashoffset = C - (C * pct / 100);
 
-  DOM.scorePercent.textContent = pct + '%';
-  DOM.statCorrect.textContent  = correct;
-  DOM.statWrong.textContent    = wrong;
-  DOM.statTotal.textContent    = total;
+  let ringColor, gradeClass, gradeLabel, title, sub;
 
-  // Headline
   if (pct >= 80) {
-    DOM.resultsTrophy.textContent = '🏆';
-    DOM.resultsTitle.textContent  = 'Excellent !';
-    DOM.resultsSub.textContent    = 'Vous maîtrisez ce sujet. Bravo !';
-  } else if (pct >= 60) {
-    DOM.resultsTrophy.textContent = '🎯';
-    DOM.resultsTitle.textContent  = 'Bon travail !';
-    DOM.resultsSub.textContent    = 'Continuez à vous entraîner pour progresser.';
-  } else if (pct >= 40) {
-    DOM.resultsTrophy.textContent = '📚';
-    DOM.resultsTitle.textContent  = 'À revoir…';
-    DOM.resultsSub.textContent    = 'Révisez les points faibles et réessayez.';
+    ringColor = '#1a7a4a'; gradeClass = 'excellent';
+    gradeLabel = '🏆 Excellent'; title = 'Bravo, vous maîtrisez ce sujet !';
+    sub = `Vous avez obtenu ${Q.score} bonnes réponses sur ${total}. Un résultat remarquable.`;
+  } else if (pct >= 65) {
+    ringColor = '#1d6a4a'; gradeClass = 'good';
+    gradeLabel = '🎯 Bon travail'; title = 'Très bonne performance !';
+    sub = `${Q.score} / ${total} — Continuez à vous entraîner pour atteindre l'excellence.`;
+  } else if (pct >= 45) {
+    ringColor = '#b07d1a'; gradeClass = 'average';
+    gradeLabel = '📘 Moyen'; title = 'Des progrès à faire.';
+    sub = `${Q.score} / ${total} — Révisez les points faibles et recommencez.`;
   } else {
-    DOM.resultsTrophy.textContent = '💪';
-    DOM.resultsTitle.textContent  = 'Ne lâchez pas !';
-    DOM.resultsSub.textContent    = 'La pratique régulière est la clé du succès.';
+    ringColor = '#c0392b'; gradeClass = 'poor';
+    gradeLabel = '💪 Insuffisant'; title = 'Restez motivé !';
+    sub = `${Q.score} / ${total} — La pratique régulière est la clé de la réussite.`;
   }
+
+  D.scoreRingFill.style.stroke = ringColor;
+  D.resultsGrade.className  = `results-grade ${gradeClass}`;
+  D.resultsGrade.textContent = gradeLabel;
+  D.resultsTitle.textContent = title;
+  D.resultsSub.textContent   = sub;
+  D.scorePercent.textContent = pct + '%';
+  D.statCorrect.textContent  = Q.score;
+  D.statWrong.textContent    = Q.wrong;
+  D.statTotal.textContent    = total;
 
   showScreen('results');
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════
    TIMER
-════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════ */
 function startTimer() {
-  updateTimerDisplay();
-  QuizState.timer = setInterval(() => {
-    QuizState.timeLeft--;
-    updateTimerDisplay();
-    if (QuizState.timeLeft <= 0) {
+  renderTimer();
+  Q.timer = setInterval(() => {
+    Q.timeLeft--;
+    renderTimer();
+    if (Q.timeLeft <= 0) {
       stopTimer();
-      // Auto-submit current if not answered, then go to results
-      if (!QuizState.answered) handleSubmit();
+      if (!Q.answered) handleSubmit();
       setTimeout(showResults, 1500);
     }
   }, 1000);
 }
 
 function stopTimer() {
-  clearInterval(QuizState.timer);
-  QuizState.timer = null;
+  clearInterval(Q.timer);
+  Q.timer = null;
 }
 
-function updateTimerDisplay() {
-  const t = QuizState.timeLeft;
-  const m = String(Math.floor(t / 60)).padStart(2, '0');
-  const s = String(t % 60).padStart(2, '0');
-  DOM.timerDisplay.innerHTML = `⏱ ${m}:${s}`;
-
-  DOM.timerDisplay.classList.remove('warning', 'danger');
-  if (t <= 60)  DOM.timerDisplay.classList.add('danger');
-  else if (t <= 300) DOM.timerDisplay.classList.add('warning');
+function renderTimer() {
+  const t  = Q.timeLeft;
+  const mm = String(Math.floor(t / 60)).padStart(2, '0');
+  const ss = String(t % 60).padStart(2, '0');
+  D.timerText.textContent = `${mm}:${ss}`;
+  D.timerDisplay.classList.remove('warn', 'danger');
+  if      (t <= 60)  D.timerDisplay.classList.add('danger');
+  else if (t <= 300) D.timerDisplay.classList.add('warn');
 }
 
-/* ════════════════════════════════════════════════════════════
-   SCREEN MANAGEMENT
-════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   SCREEN MANAGER
+═══════════════════════════════════════════════ */
 function showScreen(name) {
-  DOM.loadingScreen.style.display = 'none';
-  DOM.errorScreen.style.display   = 'none';
-  DOM.quizScreen.style.display    = 'none';
-  DOM.resultsScreen.style.display = 'none';
-
-  if (name === 'loading') DOM.loadingScreen.style.display = 'flex';
-  if (name === 'error')   DOM.errorScreen.style.display   = 'flex';
-  if (name === 'quiz')    DOM.quizScreen.style.display    = 'block';
-  if (name === 'results') DOM.resultsScreen.style.display = 'block';
+  [D.loadingScreen, D.errorScreen, D.quizScreen, D.resultsScreen].forEach(el => {
+    if (el) el.style.display = 'none';
+  });
+  if (name === 'loading') D.loadingScreen.style.display = 'flex';
+  if (name === 'error')   D.errorScreen.style.display   = 'flex';
+  if (name === 'quiz')    D.quizScreen.style.display    = 'flex';
+  if (name === 'results') D.resultsScreen.style.display = 'flex';
 }
 
-function showLoading() { showScreen('loading'); }
-
-function showError(title, message) {
-  document.getElementById('errorTitle').textContent = title;
-  DOM.errorMsg.textContent = message || '';
+function showError(title, msg) {
+  D.errorTitle.textContent = title;
+  D.errorMsg.textContent   = msg || '';
   showScreen('error');
 }
