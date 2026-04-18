@@ -8,16 +8,16 @@ const EXAMS_CONFIG = [
   {
     id: 1,
     file: "INFORMATIQUE-JUSTICE-2025-E9.xlsx",
-    title: "Techniques des Réseaux Informatiques — Ministre de Justice 2025",
+    title: "Informatique — Justice 2025",
     etab: "Justice",
     spec: "Informatique",
     year: 2025,
     echelle: "E9",
     logo: "logos/justice.svg",
-    questionCount: 60,
+    questionCount: 40,
     duration: 60,
   },
-  /* {
+  {
     id: 2,
     file: "INFORMATIQUE-JUSTICE-2024-E8.xlsx",
     title: "Informatique — Justice 2024",
@@ -100,7 +100,7 @@ const EXAMS_CONFIG = [
     logo: "logos/education.svg",
     questionCount: 50,
     duration: 90,
-  }, */
+  },
 ];
 
 // Derived filter options (auto-computed from data)
