@@ -8,7 +8,7 @@ const EXAMS_CONFIG = [
   {
     id: 1,
     file: "INFORMATIQUE-JUSTICE-2025-E9.xlsx",
-    title: "Informatique — Justice 2025",
+    title: "Réseaux Informatiques — Ministre de Justice 2025",
     etab: "Justice",
     spec: "Informatique",
     year: 2025,
@@ -20,7 +20,7 @@ const EXAMS_CONFIG = [
   {
     id: 2,
     file: "INFORMATIQUE-JUSTICE-2024-E9.xlsx",
-    title: "Informatique — Justice 2024",
+    title: "Réseaux Informatiques — Ministre de Justice 2024",
     etab: "Justice",
     spec: "Informatique",
     year: 2024,
