@@ -14,22 +14,22 @@ const EXAMS_CONFIG = [
     year: 2025,
     echelle: "E9",
     logo: "logos/justice.svg",
-    questionCount: 40,
+    questionCount: 60,
     duration: 60,
   },
   {
     id: 2,
-    file: "INFORMATIQUE-JUSTICE-2024-E8.xlsx",
+    file: "INFORMATIQUE-JUSTICE-2024-E9.xlsx",
     title: "Informatique — Justice 2024",
     etab: "Justice",
     spec: "Informatique",
     year: 2024,
-    echelle: "E8",
+    echelle: "E9",
     logo: "logos/justice.svg",
-    questionCount: 40,
+    questionCount: 60,
     duration: 60,
   },
-  {
+  /* {
     id: 3,
     file: "INFORMATIQUE-EDUCATION-2025-E9.xlsx",
     title: "Informatique — Éducation 2025",
@@ -100,7 +100,7 @@ const EXAMS_CONFIG = [
     logo: "logos/education.svg",
     questionCount: 50,
     duration: 90,
-  },
+  }, */
 ];
 
 // Derived filter options (auto-computed from data)
