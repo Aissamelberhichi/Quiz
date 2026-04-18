@@ -14,7 +14,7 @@ const EXAMS_CONFIG = [
     year: 2025,
     echelle: "E9",
     logo: "logos/justice.svg",
-    questionCount: 60,
+    questionCount: 49,
     duration: 60,
   },
   {
@@ -29,19 +29,19 @@ const EXAMS_CONFIG = [
     questionCount: 60,
     duration: 60,
   },
-  /* {
+ {
     id: 3,
-    file: "INFORMATIQUE-EDUCATION-2025-E9.xlsx",
-    title: "Informatique — Éducation 2025",
+    file: "INFORMATIQUE-EDUCATION-2023-E9.xlsx",
+    title: "Réseaux Informatiques — Ministre de Justice 2023",
     etab: "Education",
     spec: "Informatique",
-    year: 2025,
+    year: 2023,
     echelle: "E9",
     logo: "logos/education.svg",
-    questionCount: 35,
+    questionCount: 60,
     duration: 60,
   },
-  {
+   /* {
     id: 4,
     file: "INFORMATIQUE-EDUCATION-2024-E8.xlsx",
     title: "Informatique — Éducation 2024",
